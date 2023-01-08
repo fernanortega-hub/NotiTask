@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="input_name"> Ingresa tu nombre </string>
+    <string name="continue_button"> Continuar </string>
+    <string name="check_name"> Ingresa tu nombre </string>
+    <string name="welcome_login"> Hi!, Enter your name for a better experience in the application </string>
+</resources>

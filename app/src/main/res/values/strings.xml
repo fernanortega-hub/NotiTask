@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">NotiTask</string>
+    <string name="app_name" translatable="false">NotiTask</string>
+    <string name="input_name"> Enter your name </string>
+    <string name="continue_button"> Continue </string>
+    <string name="check_name"> Check your name </string>
+    <string name="welcome_login"> ¡Hola!, Ingresa tu nombre para una mejor experiencia en la aplicación </string>
 </resources>
