@@ -3,5 +3,9 @@
     <string name="input_name"> Ingresa tu nombre </string>
     <string name="continue_button"> Continuar </string>
     <string name="check_name"> Ingresa tu nombre </string>
-    <string name="welcome_login"> Hi!, Enter your name for a better experience in the application </string>
+    <string name="welcome_login"> ¡Hola!, Ingresa tu nombre para una mejor experiencia en la aplicación  </string>
+    <string name="welcome_task_name"> Hola, </string>
+    <string name="good_morning"> Buenos días </string>
+    <string name="good_evening"> Buenas noches </string>
+    <string name="good_afternoon"> Buenas tardes </string>
 </resources>

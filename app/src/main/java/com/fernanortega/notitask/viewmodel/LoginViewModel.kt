@@ -24,7 +24,6 @@ class LoginViewModel @Inject constructor(private val loginUseCase: LoginUseCase)
         _isButtonEnabled.value = enableLogin(name)
     }
 
-
     fun sendName() {
         viewModelScope.launch {
             loginUseCase.invokeAddUserInfo(name.value!!)
