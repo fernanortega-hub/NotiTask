@@ -8,4 +8,5 @@
     <string name="good_morning"> Buenos días </string>
     <string name="good_evening"> Buenas noches </string>
     <string name="good_afternoon"> Buenas tardes </string>
+    <string name="your_tasks"> Tus proyectos </string>
 </resources>

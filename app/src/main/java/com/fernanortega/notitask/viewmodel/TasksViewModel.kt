@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fernanortega.notitask.model.domain.TaskModel
 import com.fernanortega.notitask.model.domain.UserModel
 import com.fernanortega.notitask.model.response.LocalResponse
 import com.fernanortega.notitask.viewmodel.usecases.TaskUseCase
@@ -19,14 +20,39 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
     private val _userExists = MutableLiveData<Boolean>()
     val userExists: LiveData<Boolean> = _userExists
 
+    private val _error = MutableLiveData<String>()
+    val error: LiveData<String> = _error
+
+    private val _tasks = MutableLiveData<List<TaskModel>>()
+    val tasks: LiveData<List<TaskModel>> = _tasks
+
+    private val _isUILoading = MutableLiveData<Boolean>()
+    val isUILoading: LiveData<Boolean> = _isUILoading
+
     fun getUserInfo() {
         viewModelScope.launch {
-            when(taskUseCase.invokeGetUserInfo()) {
+            when (taskUseCase.invokeGetUserInfo()) {
                 is LocalResponse.Error -> _userExists.value = false
                 is LocalResponse.NullResponse -> _userExists.value = false
                 is LocalResponse.Success -> {
                     _userExists.value = true
-                    _username.value = (taskUseCase.invokeGetUserInfo() as LocalResponse.Success<UserModel>).data.name
+                    _username.value =
+                        (taskUseCase.invokeGetUserInfo() as LocalResponse.Success<UserModel>).data.name
+                }
+            }
+        }
+    }
+
+    fun getTasks() {
+        viewModelScope.launch {
+            when (taskUseCase.invokeGetTasks()) {
+                is LocalResponse.Error -> _error.value =
+                    (taskUseCase.invokeGetTasks() as LocalResponse.Error).error.message
+                is LocalResponse.NullResponse -> _error.value =
+                    (taskUseCase.invokeGetTasks() as LocalResponse.Error).error.message
+                is LocalResponse.Success -> {
+                    _isUILoading.value = true
+                    _tasks.value = (taskUseCase.invokeGetTasks() as LocalResponse.Success).data
                 }
             }
         }
