@@ -7,8 +7,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.fernanortega.notitask.ui.create_task.CreateTaskScreen
 import com.fernanortega.notitask.ui.login.LoginScreen
 import com.fernanortega.notitask.ui.tasks.TaskScreen
+import com.fernanortega.notitask.viewmodel.CreateTaskViewModel
 import com.fernanortega.notitask.viewmodel.TasksViewModel
 @Composable
 fun NavGraph(navController: NavHostController = rememberNavController()) {
@@ -20,6 +22,10 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         composable(Routes.Tasks.route) {
             val tasksViewModel = hiltViewModel<TasksViewModel>()
             TaskScreen(navController, tasksViewModel)
+        }
+        composable(Routes.CreateTask.route) {
+            val createTaskViewModel = hiltViewModel<CreateTaskViewModel>()
+            CreateTaskScreen(createTaskViewModel, navController)
         }
     }
 }

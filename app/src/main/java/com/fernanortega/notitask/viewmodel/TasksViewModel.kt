@@ -45,14 +45,22 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
 
     fun getTasks() {
         viewModelScope.launch {
+            _isUILoading.value = true
             when (taskUseCase.invokeGetTasks()) {
-                is LocalResponse.Error -> _error.value =
-                    (taskUseCase.invokeGetTasks() as LocalResponse.Error).error.message
-                is LocalResponse.NullResponse -> _error.value =
-                    (taskUseCase.invokeGetTasks() as LocalResponse.Error).error.message
+                is LocalResponse.Error -> {
+                    _error.value =
+                        (taskUseCase.invokeGetTasks() as LocalResponse.Error).error.message
+                    _isUILoading.value = false
+                }
+                is LocalResponse.NullResponse -> {
+                    _error.value =
+                        (taskUseCase.invokeGetTasks() as LocalResponse.Error).error.message
+                    _isUILoading.value = false
+                }
                 is LocalResponse.Success -> {
                     _isUILoading.value = true
                     _tasks.value = (taskUseCase.invokeGetTasks() as LocalResponse.Success).data
+                    _isUILoading.value = false
                 }
             }
         }

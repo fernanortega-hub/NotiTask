@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "task_table")
 data class TaskEntity(
-    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") val id: Long,
+    @PrimaryKey @ColumnInfo(name = "id") val id: Long,
     @ColumnInfo(name = "task_title") val taskTitle: String,
     @ColumnInfo(name = "task_body") val taskBody: String,
     @ColumnInfo(name = "is_done") val isDone: Boolean

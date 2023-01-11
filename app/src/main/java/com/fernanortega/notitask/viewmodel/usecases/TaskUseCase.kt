@@ -18,8 +18,4 @@ class TaskUseCase @Inject constructor(
     suspend fun invokeGetTasks(): LocalResponse<List<TaskModel>> {
         return taskRepo.getTasks()
     }
-
-    suspend fun invokeCreateTasks(task: TaskModel) {
-        return taskRepo.createTask(task)
-    }
 }

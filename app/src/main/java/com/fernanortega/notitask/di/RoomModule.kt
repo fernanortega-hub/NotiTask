@@ -17,7 +17,7 @@ object RoomModule {
     @Singleton
     @Provides
     fun provideRoom(@ApplicationContext context: Context) =
-        Room.databaseBuilder(context, NotiTaskDatabase::class.java, "notitask_database").build()
+        Room.databaseBuilder(context, NotiTaskDatabase::class.java, "notitask_database").fallbackToDestructiveMigration().build()
 
     @Singleton
     @Provides
