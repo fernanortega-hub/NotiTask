@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import com.fernanortega.notitask.R
 import com.fernanortega.notitask.model.domain.TaskModel
 import com.fernanortega.notitask.ui.components.LoadingComponent
+import com.fernanortega.notitask.ui.create_task.CreateTaskDialog
 import com.fernanortega.notitask.ui.navigation.Routes
 import com.fernanortega.notitask.ui.utils.BackHandler
 import com.fernanortega.notitask.viewmodel.TasksViewModel
@@ -50,7 +51,7 @@ fun TaskScreen(navController: NavController, viewModel: TasksViewModel) {
     }
 
     if (userExists) {
-        TaskBody(viewModel, navController)
+        TaskBody(viewModel)
     } else {
         LoadingComponent()
     }
@@ -58,11 +59,13 @@ fun TaskScreen(navController: NavController, viewModel: TasksViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
+fun TaskBody(viewModel: TasksViewModel) {
     viewModel.getTasks()
     val username: String by viewModel.username.observeAsState(initial = "")
-    val tasks: List<TaskModel> by viewModel.tasks.observeAsState(initial = emptyList())
+    val tasks: List<TaskModel> by viewModel.tasks.observeAsState(emptyList())
     val isUILoading: Boolean by viewModel.isUILoading.observeAsState(initial = false)
+    val showDialog: Boolean by viewModel.showDialog.observeAsState(initial = false)
+
     val listState = rememberLazyListState()
     val expandedFab by remember {
         derivedStateOf {
@@ -76,7 +79,9 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { navController.navigate(Routes.CreateTask.route) },
+                onClick = {
+                    viewModel.onShowDialog()
+                },
                 expanded = expandedFab,
                 icon = { Icon(Icons.Filled.Add, "Localized Description") },
                 text = { Text(text = "Add task") },
@@ -85,6 +90,7 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
         Column(Modifier.padding(it)) {
             BottomTasks(tasks, isUILoading, listState)
         }
+        CreateTaskDialog(viewModel, onDismiss = { viewModel.onDialogClose() }, showDialog)
     }
 }
 
@@ -107,7 +113,7 @@ fun TopBar(username: String, tasks: Int, scrollBehavior: TopAppBarScrollBehavior
 
     LargeTopAppBar(scrollBehavior = scrollBehavior, title = {
         Column() {
-            if(scrollBehavior.state.collapsedFraction < 0.5) {
+            if (scrollBehavior.state.collapsedFraction < 0.5) {
                 Text(
                     text = setTime.plus(", $username"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -124,30 +130,30 @@ fun TopBar(username: String, tasks: Int, scrollBehavior: TopAppBarScrollBehavior
 
 @Composable
 fun BottomTasks(tasks: List<TaskModel>, isUILoading: Boolean, state: LazyListState) {
-    if (tasks.isEmpty()) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            val painter =
-                painterResource(id = if (isSystemInDarkTheme()) R.drawable.empty_list_dark else R.drawable.empty_list_light)
-            Image(
-                painter = painter,
-                contentDescription = "Empty image",
-                modifier = Modifier
-                    .weight(0.5f, fill = false)
-                    .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height)
-                    .fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.size(8.dp))
-            Text(text = stringResource(id = R.string.empty_tasks))
-        }
+    if (isUILoading) {
+        LoadingComponent()
     } else {
-        if (isUILoading) {
-            LoadingComponent()
+        if (tasks.isEmpty()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val painter =
+                    painterResource(id = if (isSystemInDarkTheme()) R.drawable.empty_list_dark else R.drawable.empty_list_light)
+                Image(
+                    painter = painter,
+                    contentDescription = "Empty image",
+                    modifier = Modifier
+                        .weight(0.5f, fill = false)
+                        .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height)
+                        .fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text(text = stringResource(id = R.string.empty_tasks))
+            }
         } else {
             LazyColumn(
                 state = state,
