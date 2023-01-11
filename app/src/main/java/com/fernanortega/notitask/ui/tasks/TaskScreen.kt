@@ -1,5 +1,6 @@
 package com.fernanortega.notitask.ui.tasks
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -25,12 +26,12 @@ import androidx.navigation.NavController
 import com.fernanortega.notitask.R
 import com.fernanortega.notitask.model.domain.TaskModel
 import com.fernanortega.notitask.ui.components.LoadingComponent
-import com.fernanortega.notitask.ui.create_task.CreateTaskDialog
 import com.fernanortega.notitask.ui.navigation.Routes
 import com.fernanortega.notitask.ui.utils.BackHandler
 import com.fernanortega.notitask.viewmodel.TasksViewModel
 import java.util.*
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun TaskScreen(navController: NavController, viewModel: TasksViewModel) {
     viewModel.getUserInfo()
@@ -51,20 +52,20 @@ fun TaskScreen(navController: NavController, viewModel: TasksViewModel) {
     }
 
     if (userExists) {
-        TaskBody(viewModel)
+        TaskBody(viewModel, navController)
     } else {
         LoadingComponent()
     }
 }
 
+@ExperimentalAnimationApi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskBody(viewModel: TasksViewModel) {
+fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
     viewModel.getTasks()
     val username: String by viewModel.username.observeAsState(initial = "")
     val tasks: List<TaskModel> by viewModel.tasks.observeAsState(emptyList())
     val isUILoading: Boolean by viewModel.isUILoading.observeAsState(initial = false)
-    val showDialog: Boolean by viewModel.showDialog.observeAsState(initial = false)
 
     val listState = rememberLazyListState()
     val expandedFab by remember {
@@ -80,7 +81,7 @@ fun TaskBody(viewModel: TasksViewModel) {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
-                    viewModel.onShowDialog()
+                    navController.navigate(Routes.CreateTask.route)
                 },
                 expanded = expandedFab,
                 icon = { Icon(Icons.Filled.Add, "Localized Description") },
@@ -90,7 +91,6 @@ fun TaskBody(viewModel: TasksViewModel) {
         Column(Modifier.padding(it)) {
             BottomTasks(tasks, isUILoading, listState)
         }
-        CreateTaskDialog(viewModel, onDismiss = { viewModel.onDialogClose() }, showDialog)
     }
 }
 
@@ -112,7 +112,7 @@ fun TopBar(username: String, tasks: Int, scrollBehavior: TopAppBarScrollBehavior
     } ?: "0"
 
     LargeTopAppBar(scrollBehavior = scrollBehavior, title = {
-        Column() {
+        Column {
             if (scrollBehavior.state.collapsedFraction < 0.5) {
                 Text(
                     text = setTime.plus(", $username"),

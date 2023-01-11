@@ -1,12 +1,17 @@
 package com.fernanortega.notitask.ui.navigation
 
+import android.view.Window
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.fernanortega.notitask.ui.tasks.create_task.CreateTaskScreen
 import com.fernanortega.notitask.ui.login.LoginScreen
 import com.fernanortega.notitask.ui.tasks.TaskScreen
+import com.fernanortega.notitask.viewmodel.CreateTaskViewModel
 import com.fernanortega.notitask.viewmodel.LoginViewModel
 import com.fernanortega.notitask.viewmodel.TasksViewModel
 import com.google.accompanist.navigation.animation.AnimatedNavHost
@@ -25,23 +30,21 @@ fun NavGraph(navController: NavHostController = rememberAnimatedNavController())
             val tasksViewModel = hiltViewModel<TasksViewModel>()
             TaskScreen(navController, tasksViewModel)
         }
+        composable(Routes.CreateTask.route, enterTransition = {
+            scaleIn(
+                animationSpec = tween(400, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)),
+                transformOrigin = TransformOrigin(0.95f, 0.95f)
+            )
+        }, exitTransition = {
+            scaleOut(animationSpec = spring(Spring.DampingRatioHighBouncy))
+        }, popEnterTransition = {
+            scaleIn(
+                animationSpec = tween(400, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)),
+                transformOrigin = TransformOrigin(0.95f, 0.95f)
+            )
+        }) {
+            val createTaskViewModel = hiltViewModel<CreateTaskViewModel>()
+            CreateTaskScreen(createTaskViewModel, navController)
+        }
     }
 }
-
-//enterTransition = {
-//    scaleIn(
-//        animationSpec = tween(300, easing = EaseInCubic),
-//        transformOrigin = TransformOrigin(0.95f, 0.95f)
-//    )
-//}, exitTransition = {
-//    scaleOut(transformOrigin = TransformOrigin(0.95f, 0.95f)) + shrinkVertically(
-//        shrinkTowards = Alignment.CenterVertically
-//    )
-//}, popEnterTransition = {
-//    scaleIn(
-//        animationSpec = tween(2500, easing = EaseInCubic),
-//        transformOrigin = TransformOrigin(0.95f, 0.95f)
-//    )
-//}, popExitTransition = {
-//    scaleOut(transformOrigin = TransformOrigin(0.95f, 0.95f))
-//}

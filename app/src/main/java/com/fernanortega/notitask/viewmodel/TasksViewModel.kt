@@ -31,45 +31,6 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
     private val _isUILoading = MutableLiveData<Boolean>()
     val isUILoading: LiveData<Boolean> = _isUILoading
 
-    private val _showDialog = MutableLiveData<Boolean>()
-    val showDialog: LiveData<Boolean> = _showDialog
-
-    private val _title = MutableLiveData<String>()
-    val title: LiveData<String> = _title
-
-    private val _body = MutableLiveData<String>()
-    val body: LiveData<String> = _body
-
-    private val _checked = MutableLiveData<Boolean>()
-    val checked: LiveData<Boolean> = _checked
-
-    private val _isButtonEnabled = MutableLiveData<Boolean>()
-    val isButtonEnabled: LiveData<Boolean> = _isButtonEnabled
-
-    fun createTask() {
-        viewModelScope.launch {
-            taskUseCase.invokeCreateTasks(
-                TaskModel(
-                    id = System.currentTimeMillis(),
-                    taskTitle = _title.value!!,
-                    taskBody = _body.value!!,
-                    isDone = false
-                )
-            )
-            _showDialog.value = false
-            getTasks()
-            onTextChange("", "")
-        }
-    }
-
-    private fun enableLogin(title: String) = title.isNotBlank()
-
-    fun onTextChange(title: String, body: String) {
-        _title.value = title
-        _body.value = body
-        _isButtonEnabled.value = enableLogin(title)
-    }
-
     fun getUserInfo() {
         viewModelScope.launch {
             when (taskUseCase.invokeGetUserInfo()) {
@@ -105,13 +66,5 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
                 }
             }
         }
-    }
-
-    fun onDialogClose() {
-        _showDialog.value = false
-    }
-
-    fun onShowDialog() {
-        _showDialog.value = true
     }
 }
