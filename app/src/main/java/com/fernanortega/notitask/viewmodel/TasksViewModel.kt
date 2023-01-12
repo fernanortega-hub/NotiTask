@@ -95,6 +95,7 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
                     _isUILoading.value = false
                 }
                 is LocalResponse.Success -> {
+                    hideButtons()
                     getTasks()
                 }
             }

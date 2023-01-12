@@ -18,4 +18,5 @@
     <string name="delete_task_button"> Delete task </string>
     <string name="delete_task_body"> This will remove the task: </string>
     <string name="task_deleted_successfully"> Task deleted successfully </string>
+    <string name="add_task">Add task</string>
 </resources>

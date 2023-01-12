@@ -1,8 +1,7 @@
 package com.fernanortega.notitask.ui.tasks
 
-import android.view.HapticFeedbackConstants
 import androidx.compose.animation.*
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material.icons.Icons
@@ -15,10 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -33,6 +29,7 @@ import com.fernanortega.notitask.ui.components.LoadingComponent
 import com.fernanortega.notitask.ui.components.dialogs.DeleteTaskDialog
 import com.fernanortega.notitask.ui.navigation.Routes
 import com.fernanortega.notitask.ui.utils.BackHandler
+import com.fernanortega.notitask.ui.utils.responsiveHandler
 import com.fernanortega.notitask.viewmodel.TasksViewModel
 import java.util.*
 
@@ -56,8 +53,9 @@ fun TaskScreen(navController: NavController, viewModel: TasksViewModel) {
         }
     }
 
+    val metrics = responsiveHandler()
     if (userExists) {
-        TaskBody(viewModel, navController)
+        TaskBody(viewModel, navController, metrics)
     } else {
         LoadingComponent()
     }
@@ -66,14 +64,13 @@ fun TaskScreen(navController: NavController, viewModel: TasksViewModel) {
 @ExperimentalAnimationApi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
+fun TaskBody(viewModel: TasksViewModel, navController: NavController, metrics: Array<Int>) {
     viewModel.getTasks()
     val username: String by viewModel.username.observeAsState("")
     val taskId: Long by viewModel.taskId.observeAsState(Long.MIN_VALUE)
     val taskTitle: String by viewModel.taskTitle.observeAsState("")
     val taskBody: String by viewModel.taskBody.observeAsState("")
     val tasks: List<TaskModel> by viewModel.tasks.observeAsState(emptyList())
-    val isUILoading: Boolean by viewModel.isUILoading.observeAsState(false)
     val listState = rememberLazyGridState()
     val expandedFab by remember {
         derivedStateOf {
@@ -96,8 +93,8 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
                         navController.navigate(Routes.CreateTask.route)
                     },
                     expanded = expandedFab,
-                    icon = { Icon(Icons.Filled.Add, "Localized Description") },
-                    text = { Text(text = "Add task") },
+                    icon = { Icon(Icons.Filled.Add, "add task icon") },
+                    text = { Text(text = stringResource(R.string.add_task)) },
                 )
             }
         }, topBar = {
@@ -110,10 +107,10 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
         Column(Modifier.padding(it)) {
             BottomTasks(
                 tasks,
-                isUILoading,
                 listState,
                 viewModel,
-                showActionButtons
+                showActionButtons,
+                metrics
             )
         }
     }
@@ -179,54 +176,58 @@ fun TopBar(
 @Composable
 fun BottomTasks(
     tasks: List<TaskModel>,
-    isUILoading: Boolean,
     state: LazyGridState,
     viewModel: TasksViewModel,
-    showActionButtons: Boolean
+    showActionButtons: Boolean,
+    metrics: Array<Int>
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val changeColor = remember { mutableStateOf(false) }
-    if (isUILoading) {
-        LoadingComponent()
+    val changeGridCells = remember { mutableStateOf(1) }
+
+    when {
+        metrics[2] == 1 -> {
+            if (metrics[0].dp > 600.dp) {
+                changeGridCells.value = 1
+            } else if (metrics[0].dp > 720.dp) {
+                changeGridCells.value = 3
+            } else if (metrics[0].dp > 1024.dp) {
+                changeGridCells.value = 4
+            }
+        }
+        metrics[2] == 2 -> {
+            if (metrics[0].dp > 600.dp) {
+                changeGridCells.value = 2
+            } else if (metrics[0].dp > 720.dp) {
+                changeGridCells.value = 4
+            }
+        }
+    }
+    if (tasks.isEmpty()) {
+        EmptyListTasks()
     } else {
-        if (tasks.isEmpty()) {
-            EmptyListTasks()
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                state = state,
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = 88.dp,
-                    top = 16.dp
-                ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(tasks, key = {
-                    it.id
-                }) { task ->
-                    TaskItem(
-                        task,
-                        modifier = Modifier
-                            .pointerInput(Unit) {
-                                detectTapGestures(onLongPress = {
-                                    hapticFeedback.performHapticFeedback(
-                                        HapticFeedbackType(
-                                            HapticFeedbackConstants.LONG_PRESS
-                                        )
-                                    )
-                                    changeColor.value = !changeColor.value
-                                    viewModel.showButtons()
-                                    viewModel.onInfoChange(task.id, task.taskTitle, task.taskBody)
-                                })
-                            },
-                        containerColor = if (showActionButtons) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = if (showActionButtons) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(changeGridCells.value),
+            state = state,
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 88.dp,
+                top = 16.dp
+            ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(tasks, key = {
+                it.id
+            }) { task ->
+                TaskItem(
+                    task,
+                    function = {
+                        viewModel.showButtons()
+                        viewModel.onInfoChange(task.id, task.taskTitle, task.taskBody)
+                    }
+                )
             }
         }
     }
@@ -236,35 +237,39 @@ fun BottomTasks(
 fun TaskItem(
     task: TaskModel,
     modifier: Modifier = Modifier,
-    containerColor: Color,
-    contentColor: Color
+    function: () -> Unit
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = containerColor,
-            contentColor = contentColor
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
     ) {
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)
+                .clickable {
+                    function()
+                }
         ) {
-            Text(
-                text = task.taskTitle,
-                fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                fontWeight = FontWeight.Medium
-            )
-            if (task.taskBody.isNotBlank()) {
+            Column(Modifier.padding(8.dp).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = task.taskBody,
-                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                    text = task.taskTitle,
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize,
                     fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
+                    fontWeight = FontWeight.Medium
                 )
+                if (task.taskBody.isNotBlank()) {
+                    Text(
+                        text = task.taskBody,
+                        fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                        fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }

@@ -60,7 +60,7 @@ fun TopAppBar(scrollBehavior: TopAppBarScrollBehavior, navController: NavControl
         },
         scrollBehavior = scrollBehavior,
         navigationIcon = {
-            IconButton(onClick = { navController.navigate(Routes.Tasks.route) }) {
+            IconButton(onClick = { navController.popBackStack(Routes.Tasks.route, inclusive = false) }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "back")
             }
         }
@@ -111,14 +111,14 @@ fun Form(viewModel: CreateTaskViewModel, modifier: Modifier, navController: NavC
         ) {
             OutlinedButton(
                 modifier = Modifier.weight(1f),
-                onClick = { navController.navigate(Routes.Tasks.route) }) {
+                onClick = { navController.popBackStack(Routes.Tasks.route, inclusive = false) }) {
                 Text(text = stringResource(id = R.string.cancel_text))
             }
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
                     viewModel.createTask()
-                    navController.navigate(Routes.Tasks.route)
+                    navController.popBackStack(Routes.Tasks.route, inclusive = false)
                 },
                 enabled = isButtonEnabled
             ) {
