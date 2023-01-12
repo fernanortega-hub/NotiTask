@@ -1,5 +1,7 @@
 package com.fernanortega.notitask.viewmodel
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -31,6 +33,18 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
 
     private val _showDialog = MutableLiveData<Boolean>()
     val showDialog: LiveData<Boolean> = _showDialog
+
+    private val _showButtons = MutableLiveData<Boolean>()
+    val showButtons: LiveData<Boolean> = _showButtons
+
+    private val _taskId = MutableLiveData(Long.MIN_VALUE)
+    val taskId: LiveData<Long> = _taskId
+
+    private val _taskTitle = MutableLiveData<String>()
+    val taskTitle: LiveData<String> = _taskTitle
+
+    private val _taskBody = MutableLiveData<String>()
+    val taskBody: LiveData<String> = _taskBody
 
     fun getUserInfo() {
         viewModelScope.launch {
@@ -95,5 +109,19 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
 
     fun showDialog() {
         _showDialog.value = true
+    }
+
+    fun hideButtons() {
+        _showButtons.value = false
+    }
+
+    fun showButtons() {
+        _showButtons.value = true
+    }
+
+    fun onInfoChange(id: Long, title: String, body: String) {
+        _taskId.value = id
+        _taskTitle.value = title
+        _taskBody.value = body
     }
 }

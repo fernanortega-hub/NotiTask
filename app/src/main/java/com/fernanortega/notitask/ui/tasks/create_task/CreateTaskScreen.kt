@@ -23,8 +23,6 @@ import androidx.navigation.NavController
 import com.fernanortega.notitask.R
 import com.fernanortega.notitask.ui.navigation.Routes
 import com.fernanortega.notitask.viewmodel.CreateTaskViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,16 +32,18 @@ fun CreateTaskScreen(viewModel: CreateTaskViewModel, navController: NavControlle
         topBar = { TopAppBar(scrollBehavior, navController) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) {
-        Form(
-            viewModel,
-            modifier = Modifier.padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = it.calculateTopPadding(),
-                bottom = it.calculateBottomPadding()
-            ),
-            navController
-        )
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Form(
+                viewModel,
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = it.calculateTopPadding(),
+                    bottom = it.calculateBottomPadding()
+                ),
+                navController
+            )
+        }
     }
 }
 
@@ -86,7 +86,7 @@ fun Form(viewModel: CreateTaskViewModel, modifier: Modifier, navController: NavC
             onValueChange = { viewModel.onTextChange(it, body) },
             maxLines = 1,
             singleLine = true,
-            label = { Text(text = stringResource(id = R.string.title_create)) },
+            label = { Text(text = stringResource(id = R.string.task_title)) },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 imeAction = ImeAction.Next

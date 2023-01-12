@@ -1,36 +1,37 @@
 package com.fernanortega.notitask.ui.tasks
 
-import android.widget.Toast
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.UiComposable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.fernanortega.notitask.R
 import com.fernanortega.notitask.model.domain.TaskModel
+import com.fernanortega.notitask.ui.components.EmptyListTasks
 import com.fernanortega.notitask.ui.components.LoadingComponent
+import com.fernanortega.notitask.ui.components.dialogs.DeleteTaskDialog
 import com.fernanortega.notitask.ui.navigation.Routes
 import com.fernanortega.notitask.ui.utils.BackHandler
 import com.fernanortega.notitask.viewmodel.TasksViewModel
@@ -68,40 +69,68 @@ fun TaskScreen(navController: NavController, viewModel: TasksViewModel) {
 @Composable
 fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
     viewModel.getTasks()
-    val username: String by viewModel.username.observeAsState(initial = "")
+    val username: String by viewModel.username.observeAsState("")
+    val taskId: Long by viewModel.taskId.observeAsState(Long.MIN_VALUE)
+    val taskTitle: String by viewModel.taskTitle.observeAsState("")
+    val taskBody: String by viewModel.taskBody.observeAsState("")
     val tasks: List<TaskModel> by viewModel.tasks.observeAsState(emptyList())
-    val isUILoading: Boolean by viewModel.isUILoading.observeAsState(initial = false)
-    val listState = rememberLazyListState()
+    val isUILoading: Boolean by viewModel.isUILoading.observeAsState(false)
+    val listState = rememberLazyGridState()
     val expandedFab by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex == 0
         }
     }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val showActionButtons: Boolean by viewModel.showButtons.observeAsState(false)
+    val showDialog: Boolean by viewModel.showDialog.observeAsState(false)
+
+
+    DeleteTaskDialog(taskId, taskTitle, showDialog, taskBody, viewModel)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = {
-                    navController.navigate(Routes.CreateTask.route)
-                },
-                expanded = expandedFab,
-                icon = { Icon(Icons.Filled.Add, "Localized Description") },
-                text = { Text(text = "Add task") },
-            )
+            if(!showActionButtons) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        navController.navigate(Routes.CreateTask.route)
+                    },
+                    expanded = expandedFab,
+                    icon = { Icon(Icons.Filled.Add, "Localized Description") },
+                    text = { Text(text = "Add task") },
+                )
+            }
         }, topBar = {
-            TopBar(username, tasks.size, scrollBehavior)
+            TopBar(username, tasks.size, scrollBehavior, showActionButtons, showDialogForDelete = {
+                viewModel.showDialog()
+            }, navigateToEdit = {
+                navController.navigate(Routes.EditTask.createRoute(taskId))
+            }, { viewModel.hideButtons() })
         }) {
         Column(Modifier.padding(it)) {
-            BottomTasks(tasks, isUILoading, listState, viewModel)
+            BottomTasks(
+                tasks,
+                isUILoading,
+                listState,
+                viewModel,
+                showActionButtons
+            )
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(username: String, tasks: Int, scrollBehavior: TopAppBarScrollBehavior) {
+fun TopBar(
+    username: String,
+    tasks: Int,
+    scrollBehavior: TopAppBarScrollBehavior,
+    showActionButtons: Boolean,
+    showDialogForDelete: () -> Unit,
+    navigateToEdit: () -> Unit,
+    hideButtons: () -> Unit
+) {
     var setTime by rememberSaveable {
         mutableStateOf("")
     }
@@ -130,6 +159,21 @@ fun TopBar(username: String, tasks: Int, scrollBehavior: TopAppBarScrollBehavior
                 text = stringResource(id = R.string.your_tasks).plus(" ($showSize)"),
             )
         }
+    }, actions = {
+        if (showActionButtons) {
+            IconButton(onClick = { showDialogForDelete() }) {
+                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete icon")
+            }
+            IconButton(onClick = { showDialogForDelete() }) {
+                Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit icon")
+            }
+        }
+    }, navigationIcon = {
+        if (showActionButtons) {
+            IconButton(onClick = { hideButtons() }) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "back")
+            }
+        }
     })
 }
 
@@ -137,94 +181,51 @@ fun TopBar(username: String, tasks: Int, scrollBehavior: TopAppBarScrollBehavior
 fun BottomTasks(
     tasks: List<TaskModel>,
     isUILoading: Boolean,
-    state: LazyListState,
-    viewModel: TasksViewModel
+    state: LazyGridState,
+    viewModel: TasksViewModel,
+    showActionButtons: Boolean
 ) {
-    val showDialog: Boolean by viewModel.showDialog.observeAsState(false)
-    var taskId by remember {
-        mutableStateOf(Long.MIN_VALUE)
-    }
-
-    var taskTitle by remember {
-        mutableStateOf("")
-    }
-
-    if (showDialog) {
-        AlertDialog(onDismissRequest = { viewModel.closeDialog() }, icon = {
-            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete icon")
-        }, title = {
-            Text(text = stringResource(id = R.string.delete_task_title))
-        }, text = {
-            Column(Modifier.fillMaxWidth()) {
-                Text(text = stringResource(id = R.string.delete_task_body))
-                Divider(
-                    thickness = 1.dp, modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp)
-                )
-                Text(text = taskTitle, fontWeight = FontWeight.SemiBold)
-                Divider(
-                    thickness = 1.dp, modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp)
-                )
-            }
-        }, dismissButton = {
-            TextButton(onClick = { viewModel.closeDialog() }) {
-                Text(text = stringResource(id = R.string.cancel_text))
-            }
-        }, confirmButton = {
-            TextButton(onClick = {
-                viewModel.deleteTask(taskId)
-                viewModel.closeDialog()
-            }) {
-                Text(text = stringResource(id = R.string.delete_task_button))
-            }
-        })
-    }
-
+    val hapticFeedback = LocalHapticFeedback.current
+    val changeColor = remember { mutableStateOf(false) }
     if (isUILoading) {
         LoadingComponent()
     } else {
         if (tasks.isEmpty()) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val painter =
-                    painterResource(id = if (isSystemInDarkTheme()) R.drawable.empty_list_dark else R.drawable.empty_list_light)
-                Image(
-                    painter = painter,
-                    contentDescription = "Empty image",
-                    modifier = Modifier
-                        .weight(0.5f, fill = false)
-                        .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height)
-                        .fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                Text(text = stringResource(id = R.string.empty_tasks))
-            }
+            EmptyListTasks()
         } else {
-            LazyColumn(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp)
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 88.dp,
+                    top = 16.dp
+                ),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(tasks, key = {
                     it.id
                 }) { task ->
-                    TaskItem(task, modifier = Modifier
-                        .pointerInput(Unit) {
-                            detectTapGestures(onLongPress = {
-                                viewModel.showDialog()
-                                taskId = task.id
-                                taskTitle = task.taskTitle
-                            })
-                        })
+                    TaskItem(task,
+                        modifier = Modifier
+                            .pointerInput(Unit) {
+                                detectTapGestures(onLongPress = {
+                                    hapticFeedback.performHapticFeedback(
+                                        HapticFeedbackType(
+                                            HapticFeedbackConstants.LONG_PRESS
+                                        )
+                                    )
+                                    changeColor.value = !changeColor.value
+                                    viewModel.showButtons()
+                                    viewModel.onInfoChange(task.id, task.taskTitle, task.taskBody)
+                                })
+                            },
+                        containerColor = if (showActionButtons) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = if (showActionButtons) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    )
                 }
             }
         }
@@ -232,13 +233,18 @@ fun BottomTasks(
 }
 
 @Composable
-fun TaskItem(task: TaskModel, modifier: Modifier = Modifier) {
+fun TaskItem(
+    task: TaskModel,
+    modifier: Modifier = Modifier,
+    containerColor: Color,
+    contentColor: Color
+) {
     Card(
         modifier = modifier
             .fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            containerColor = containerColor,
+            contentColor = contentColor
         )
     ) {
         Column(
@@ -255,7 +261,9 @@ fun TaskItem(task: TaskModel, modifier: Modifier = Modifier) {
                 Text(
                     text = task.taskBody,
                     fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                    fontStyle = MaterialTheme.typography.bodyMedium.fontStyle
+                    fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
