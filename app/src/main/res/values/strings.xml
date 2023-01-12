@@ -14,4 +14,8 @@
     <string name="task_title"> Task title </string>
     <string name="task_description"> Task description </string>
     <string name="cancel_text"> Cancel </string>
+    <string name="delete_task_title"> Delete task? </string>
+    <string name="delete_task_button"> Delete task </string>
+    <string name="delete_task_body"> This will remove the task: </string>
+    <string name="task_deleted_successfully"> Task deleted successfully </string>
 </resources>

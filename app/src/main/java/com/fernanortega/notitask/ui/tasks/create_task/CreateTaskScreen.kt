@@ -118,11 +118,7 @@ fun Form(viewModel: CreateTaskViewModel, modifier: Modifier, navController: NavC
                 modifier = Modifier.weight(1f),
                 onClick = {
                     viewModel.createTask()
-                    runBlocking {
-                        delay(50)
-                    }
                     navController.navigate(Routes.Tasks.route)
-
                 },
                 enabled = isButtonEnabled
             ) {

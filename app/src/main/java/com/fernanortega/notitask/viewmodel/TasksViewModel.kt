@@ -1,6 +1,5 @@
 package com.fernanortega.notitask.viewmodel
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,7 +10,6 @@ import com.fernanortega.notitask.model.response.LocalResponse
 import com.fernanortega.notitask.viewmodel.usecases.TaskUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import okhttp3.internal.concurrent.Task
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,6 +28,9 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
 
     private val _isUILoading = MutableLiveData<Boolean>()
     val isUILoading: LiveData<Boolean> = _isUILoading
+
+    private val _showDialog = MutableLiveData<Boolean>()
+    val showDialog: LiveData<Boolean> = _showDialog
 
     fun getUserInfo() {
         viewModelScope.launch {
@@ -56,7 +57,7 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
                 }
                 is LocalResponse.NullResponse -> {
                     _error.value =
-                        (taskUseCase.invokeGetTasks() as LocalResponse.Error).error.message
+                        (taskUseCase.invokeGetTasks() as LocalResponse.NullResponse).exception.message
                     _isUILoading.value = false
                 }
                 is LocalResponse.Success -> {
@@ -66,5 +67,33 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
                 }
             }
         }
+    }
+
+    fun deleteTask(id: Long) {
+        viewModelScope.launch {
+            when (taskUseCase.invokeDeleteTask(id)) {
+                is LocalResponse.Error -> {
+                    _error.value =
+                        (taskUseCase.invokeDeleteTask(id) as LocalResponse.Error).error.message
+                    _isUILoading.value = false
+                }
+                is LocalResponse.NullResponse -> {
+                    _error.value =
+                        (taskUseCase.invokeDeleteTask(id) as LocalResponse.NullResponse).exception.message
+                    _isUILoading.value = false
+                }
+                is LocalResponse.Success -> {
+                    getTasks()
+                }
+            }
+        }
+    }
+
+    fun closeDialog() {
+        _showDialog.value = false
+    }
+
+    fun showDialog() {
+        _showDialog.value = true
     }
 }

@@ -1,7 +1,9 @@
 package com.fernanortega.notitask.ui.tasks
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -17,6 +20,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -66,14 +71,12 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
     val username: String by viewModel.username.observeAsState(initial = "")
     val tasks: List<TaskModel> by viewModel.tasks.observeAsState(emptyList())
     val isUILoading: Boolean by viewModel.isUILoading.observeAsState(initial = false)
-
     val listState = rememberLazyListState()
     val expandedFab by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex == 0
         }
     }
-
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -87,9 +90,11 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
                 icon = { Icon(Icons.Filled.Add, "Localized Description") },
                 text = { Text(text = "Add task") },
             )
-        }, topBar = { TopBar(username, tasks.size, scrollBehavior) }) {
+        }, topBar = {
+            TopBar(username, tasks.size, scrollBehavior)
+        }) {
         Column(Modifier.padding(it)) {
-            BottomTasks(tasks, isUILoading, listState)
+            BottomTasks(tasks, isUILoading, listState, viewModel)
         }
     }
 }
@@ -129,7 +134,55 @@ fun TopBar(username: String, tasks: Int, scrollBehavior: TopAppBarScrollBehavior
 }
 
 @Composable
-fun BottomTasks(tasks: List<TaskModel>, isUILoading: Boolean, state: LazyListState) {
+fun BottomTasks(
+    tasks: List<TaskModel>,
+    isUILoading: Boolean,
+    state: LazyListState,
+    viewModel: TasksViewModel
+) {
+    val showDialog: Boolean by viewModel.showDialog.observeAsState(false)
+    var taskId by remember {
+        mutableStateOf(Long.MIN_VALUE)
+    }
+
+    var taskTitle by remember {
+        mutableStateOf("")
+    }
+
+    if (showDialog) {
+        AlertDialog(onDismissRequest = { viewModel.closeDialog() }, icon = {
+            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete icon")
+        }, title = {
+            Text(text = stringResource(id = R.string.delete_task_title))
+        }, text = {
+            Column(Modifier.fillMaxWidth()) {
+                Text(text = stringResource(id = R.string.delete_task_body))
+                Divider(
+                    thickness = 1.dp, modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp)
+                )
+                Text(text = taskTitle, fontWeight = FontWeight.SemiBold)
+                Divider(
+                    thickness = 1.dp, modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp)
+                )
+            }
+        }, dismissButton = {
+            TextButton(onClick = { viewModel.closeDialog() }) {
+                Text(text = stringResource(id = R.string.cancel_text))
+            }
+        }, confirmButton = {
+            TextButton(onClick = {
+                viewModel.deleteTask(taskId)
+                viewModel.closeDialog()
+            }) {
+                Text(text = stringResource(id = R.string.delete_task_button))
+            }
+        })
+    }
+
     if (isUILoading) {
         LoadingComponent()
     } else {
@@ -164,7 +217,14 @@ fun BottomTasks(tasks: List<TaskModel>, isUILoading: Boolean, state: LazyListSta
                 items(tasks, key = {
                     it.id
                 }) { task ->
-                    TaskItem(task)
+                    TaskItem(task, modifier = Modifier
+                        .pointerInput(Unit) {
+                            detectTapGestures(onLongPress = {
+                                viewModel.showDialog()
+                                taskId = task.id
+                                taskTitle = task.taskTitle
+                            })
+                        })
                 }
             }
         }
@@ -172,9 +232,10 @@ fun BottomTasks(tasks: List<TaskModel>, isUILoading: Boolean, state: LazyListSta
 }
 
 @Composable
-fun TaskItem(task: TaskModel) {
+fun TaskItem(task: TaskModel, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer

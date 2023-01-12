@@ -31,4 +31,17 @@ class TaskRepository @Inject constructor(private val taskDao: TaskDao) {
             taskDao.createTask(TaskEntity(task.id, task.taskTitle, task.taskBody, task.isDone))
         }
     }
+
+    suspend fun deleteTask(id: Long) : LocalResponse<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                taskDao.deleteTask(id)
+                LocalResponse.Success(true)
+            } catch (err: NullPointerException) {
+                LocalResponse.NullResponse(err)
+            } catch (err: Exception) {
+                LocalResponse.Error(err)
+            }
+        }
+    }
 }

@@ -19,8 +19,8 @@ class TaskUseCase @Inject constructor(
         return taskRepo.getTasks()
     }
 
-    suspend fun invokeCreateTasks(task: TaskModel) {
-        return taskRepo.createTask(task)
+    suspend fun invokeDeleteTask(id: Long) : LocalResponse<Boolean> {
+        return taskRepo.deleteTask(id)
     }
 
 }
