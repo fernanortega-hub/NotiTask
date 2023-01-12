@@ -16,7 +16,13 @@ import com.fernanortega.notitask.R
 import com.fernanortega.notitask.viewmodel.TasksViewModel
 
 @Composable
-fun DeleteTaskDialog(id: Long, title: String, show: Boolean, body: String, viewModel: TasksViewModel) {
+fun DeleteTaskDialog(
+    id: Long,
+    title: String,
+    show: Boolean,
+    body: String,
+    viewModel: TasksViewModel
+) {
 
     if (show) {
         AlertDialog(onDismissRequest = { viewModel.closeDialog() }, icon = {

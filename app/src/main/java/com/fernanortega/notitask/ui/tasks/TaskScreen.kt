@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -91,7 +90,7 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController) {
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         floatingActionButton = {
-            if(!showActionButtons) {
+            if (!showActionButtons) {
                 ExtendedFloatingActionButton(
                     onClick = {
                         navController.navigate(Routes.CreateTask.route)
@@ -209,7 +208,8 @@ fun BottomTasks(
                 items(tasks, key = {
                     it.id
                 }) { task ->
-                    TaskItem(task,
+                    TaskItem(
+                        task,
                         modifier = Modifier
                             .pointerInput(Unit) {
                                 detectTapGestures(onLongPress = {
