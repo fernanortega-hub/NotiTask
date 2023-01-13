@@ -23,9 +23,11 @@ fun DeleteTaskDialog(
     body: String,
     viewModel: TasksViewModel
 ) {
-
     if (show) {
-        AlertDialog(onDismissRequest = { viewModel.closeDialog() }, icon = {
+        AlertDialog(onDismissRequest = {
+            viewModel.closeDeleteDialog()
+            viewModel.closeDialog()
+        }, icon = {
             Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete icon")
         }, title = {
             Text(text = stringResource(id = R.string.delete_task_title))
@@ -54,6 +56,7 @@ fun DeleteTaskDialog(
         }, confirmButton = {
             TextButton(onClick = {
                 viewModel.deleteTask(id)
+                viewModel.closeDeleteDialog()
                 viewModel.closeDialog()
             }) {
                 Text(text = stringResource(id = R.string.delete_task_button))

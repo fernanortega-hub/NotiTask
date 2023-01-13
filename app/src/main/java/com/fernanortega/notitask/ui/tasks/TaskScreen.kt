@@ -6,16 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,8 +22,8 @@ import com.fernanortega.notitask.R
 import com.fernanortega.notitask.model.domain.TaskModel
 import com.fernanortega.notitask.ui.components.EmptyListTasks
 import com.fernanortega.notitask.ui.components.LoadingComponent
-import com.fernanortega.notitask.ui.components.dialogs.DeleteTaskDialog
 import com.fernanortega.notitask.ui.navigation.Routes
+import com.fernanortega.notitask.ui.tasks.task_details.TaskDetails
 import com.fernanortega.notitask.ui.utils.BackHandler
 import com.fernanortega.notitask.ui.utils.responsiveHandler
 import com.fernanortega.notitask.viewmodel.TasksViewModel
@@ -78,38 +74,29 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController, metrics: A
         }
     }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val showActionButtons: Boolean by viewModel.showButtons.observeAsState(false)
     val showDialog: Boolean by viewModel.showDialog.observeAsState(false)
 
-
-    DeleteTaskDialog(taskId, taskTitle, showDialog, taskBody, viewModel)
+    TaskDetails(onDismiss = { viewModel.closeDialog() }, viewModel, showDialog, taskId, taskTitle, taskBody)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         floatingActionButton = {
-            if (!showActionButtons) {
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        navController.navigate(Routes.CreateTask.route)
-                    },
-                    expanded = expandedFab,
-                    icon = { Icon(Icons.Filled.Add, "add task icon") },
-                    text = { Text(text = stringResource(R.string.add_task)) },
-                )
-            }
+            ExtendedFloatingActionButton(
+                onClick = {
+                    navController.navigate(Routes.CreateTask.route)
+                },
+                expanded = expandedFab,
+                icon = { Icon(Icons.Filled.Add, "add task icon") },
+                text = { Text(text = stringResource(R.string.add_task)) },
+            )
         }, topBar = {
-            TopBar(username, tasks.size, scrollBehavior, showActionButtons, showDialogForDelete = {
-                viewModel.showDialog()
-            }, navigateToEdit = {
-                navController.navigate(Routes.EditTask.createRoute(taskId))
-            }, { viewModel.hideButtons() })
+            TopBar(username, tasks.size, scrollBehavior)
         }) {
         Column(Modifier.padding(it)) {
             BottomTasks(
                 tasks,
                 listState,
                 viewModel,
-                showActionButtons,
                 metrics
             )
         }
@@ -121,11 +108,7 @@ fun TaskBody(viewModel: TasksViewModel, navController: NavController, metrics: A
 fun TopBar(
     username: String,
     tasks: Int,
-    scrollBehavior: TopAppBarScrollBehavior,
-    showActionButtons: Boolean,
-    showDialogForDelete: () -> Unit,
-    navigateToEdit: () -> Unit,
-    hideButtons: () -> Unit
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
     var setTime by rememberSaveable {
         mutableStateOf("")
@@ -155,21 +138,6 @@ fun TopBar(
                 text = stringResource(id = R.string.your_tasks).plus(" ($showSize)"),
             )
         }
-    }, actions = {
-        if (showActionButtons) {
-            IconButton(onClick = { showDialogForDelete() }) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete icon")
-            }
-            IconButton(onClick = { showDialogForDelete() }) {
-                Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit icon")
-            }
-        }
-    }, navigationIcon = {
-        if (showActionButtons) {
-            IconButton(onClick = { hideButtons() }) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "back")
-            }
-        }
     })
 }
 
@@ -178,10 +146,8 @@ fun BottomTasks(
     tasks: List<TaskModel>,
     state: LazyGridState,
     viewModel: TasksViewModel,
-    showActionButtons: Boolean,
     metrics: Array<Int>
 ) {
-    val hapticFeedback = LocalHapticFeedback.current
     val changeGridCells = remember { mutableStateOf(1) }
 
     when {
@@ -224,7 +190,7 @@ fun BottomTasks(
                 TaskItem(
                     task,
                     function = {
-                        viewModel.showButtons()
+                        viewModel.showDialog()
                         viewModel.onInfoChange(task.id, task.taskTitle, task.taskBody)
                     }
                 )
@@ -254,7 +220,12 @@ fun TaskItem(
                     function()
                 }
         ) {
-            Column(Modifier.padding(8.dp).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                Modifier
+                    .padding(8.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
                     text = task.taskTitle,
                     fontSize = MaterialTheme.typography.titleLarge.fontSize,

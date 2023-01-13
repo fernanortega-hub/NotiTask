@@ -32,8 +32,8 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
     private val _showDialog = MutableLiveData<Boolean>()
     val showDialog: LiveData<Boolean> = _showDialog
 
-    private val _showButtons = MutableLiveData<Boolean>()
-    val showButtons: LiveData<Boolean> = _showButtons
+    private val _showDeleteDialog = MutableLiveData<Boolean>()
+    val showDeleteDialog: LiveData<Boolean> = _showDeleteDialog
 
     private val _taskId = MutableLiveData(Long.MIN_VALUE)
     val taskId: LiveData<Long> = _taskId
@@ -43,6 +43,10 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
 
     private val _taskBody = MutableLiveData<String>()
     val taskBody: LiveData<String> = _taskBody
+
+
+    private val _isButtonEnabled = MutableLiveData<Boolean>()
+    val isButtonEnabled: LiveData<Boolean> = _isButtonEnabled
 
     fun getUserInfo() {
         viewModelScope.launch {
@@ -81,6 +85,37 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
         }
     }
 
+
+    fun closeDialog() {
+        _showDialog.value = false
+    }
+
+    fun showDialog() {
+        _showDialog.value = true
+    }
+
+    fun closeDeleteDialog() {
+        _showDeleteDialog.value = false
+    }
+
+    fun showDeleteDialog() {
+        _showDeleteDialog.value = true
+    }
+
+    fun onInfoChange(id: Long, title: String, body: String) {
+        _taskId.value = id
+        _taskTitle.value = title
+        _taskBody.value = body
+    }
+
+    private fun enableButton(title: String) = title.isNotBlank()
+
+    fun onTextChange(title: String, body: String) {
+        _taskTitle.value = title
+        _taskBody.value = body
+        _isButtonEnabled.value = enableButton(title)
+    }
+
     fun deleteTask(id: Long) {
         viewModelScope.launch {
             when (taskUseCase.invokeDeleteTask(id)) {
@@ -95,32 +130,9 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
                     _isUILoading.value = false
                 }
                 is LocalResponse.Success -> {
-                    hideButtons()
                     getTasks()
                 }
             }
         }
-    }
-
-    fun closeDialog() {
-        _showDialog.value = false
-    }
-
-    fun showDialog() {
-        _showDialog.value = true
-    }
-
-    fun hideButtons() {
-        _showButtons.value = false
-    }
-
-    fun showButtons() {
-        _showButtons.value = true
-    }
-
-    fun onInfoChange(id: Long, title: String, body: String) {
-        _taskId.value = id
-        _taskTitle.value = title
-        _taskBody.value = body
     }
 }
