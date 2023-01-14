@@ -23,8 +23,8 @@ class TaskUseCase @Inject constructor(
         return taskRepo.deleteTask(id)
     }
 
-    suspend fun invokeEditTask(taskModel: TaskModel) : Boolean {
-        return true
+    suspend fun invokeEditTask(taskModel: TaskModel) {
+        return taskRepo.insertTask(taskModel)
     }
 
 }

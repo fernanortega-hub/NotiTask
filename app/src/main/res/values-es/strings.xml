@@ -19,4 +19,5 @@
     <string name="delete_task_body"> Esta acción eliminará la siguiente tarea: </string>
     <string name="task_deleted_successfully"> Tarea eliminada con éxito </string>
     <string name="add_task"> Agregar tarea </string>
+    <string name="edit_task"> Editar tarea </string>
 </resources>

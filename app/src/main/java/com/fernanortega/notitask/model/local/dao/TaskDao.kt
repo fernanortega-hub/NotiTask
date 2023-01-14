@@ -12,7 +12,7 @@ interface TaskDao {
     suspend fun getAllTasks() : List<TaskEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun createTask(taskEntity: TaskEntity)
+    suspend fun insertTask(taskEntity: TaskEntity)
 
     @Query("DELETE FROM task_table WHERE id LIKE :id")
     suspend fun deleteTask(id: Long)

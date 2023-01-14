@@ -135,4 +135,17 @@ class TasksViewModel @Inject constructor(private val taskUseCase: TaskUseCase) :
             }
         }
     }
+
+    fun editTask(id: Long) {
+        viewModelScope.launch {
+            taskUseCase.invokeEditTask(
+                TaskModel(
+                    id = id,
+                    taskTitle = _taskTitle.value!!,
+                    taskBody = _taskBody.value!!,
+                    isDone = false
+                )
+            )
+        }
+    }
 }

@@ -26,7 +26,6 @@ fun DeleteTaskDialog(
     if (show) {
         AlertDialog(onDismissRequest = {
             viewModel.closeDeleteDialog()
-            viewModel.closeDialog()
         }, icon = {
             Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete icon")
         }, title = {
@@ -41,7 +40,7 @@ fun DeleteTaskDialog(
                 )
                 Text(text = title, fontWeight = FontWeight.SemiBold)
                 if (body.isNotBlank()) {
-                    Text(text = body, overflow = TextOverflow.Ellipsis, maxLines = 3)
+                    Text(text = body.replace("\\s+".toRegex(), " "), overflow = TextOverflow.Ellipsis, maxLines = 2)
                 }
                 Divider(
                     thickness = 1.dp, modifier = Modifier
@@ -50,7 +49,7 @@ fun DeleteTaskDialog(
                 )
             }
         }, dismissButton = {
-            TextButton(onClick = { viewModel.closeDialog() }) {
+            TextButton(onClick = { viewModel.closeDeleteDialog() }) {
                 Text(text = stringResource(id = R.string.cancel_text))
             }
         }, confirmButton = {
